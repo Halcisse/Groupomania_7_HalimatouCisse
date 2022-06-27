@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
-const path = require("path");
+const cookieSession = require("cookie-session");
 require("dotenv").config();
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
@@ -11,12 +11,6 @@ const limiter = rateLimit({
   max: 100,
   message: "Il y a eu trop de requêtes depuis cette adresse IP!",
 });
-
-// parse requests of content-type - application/json
-app.use(express.json());
-
-// on definit les routes principales
-const userRoute = require("./routes/user");
 
 //Connexion à la base de donnée avec Mongoose
 mongoose
@@ -44,7 +38,13 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to bezkoder application!" });
 });
-
+app.use(
+  cookieSession({
+    name: "groupomania-session",
+    secret: "COOKIE_SECRET",
+    httpOnly: true,
+  })
+);
 app.use(express.json()); // les requetes entrantes sont parsés en json
 app.use(limiter); // Sécurise l'authentification
 app.use(
@@ -53,7 +53,11 @@ app.use(
   })
 ); // Sécurise le serveur Express
 
+// on definit les routes principales
+const userRoute = require("./routes/user");
+// const postRoute = require("./routes/posts");
+
 app.use("/api/auth", userRoute);
-app.use("/images", express.static(path.join(__dirname, "images")));
+// app.use("/api/posts", postRoute);
 
 module.exports = app;
